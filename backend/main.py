@@ -60,10 +60,13 @@ def normalise_user_id(value: str | None) -> str:
 app = FastAPI(title="Universal Car AI Assistant")
 
 frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+
 allowed_origins = [
+    "https://universal-car-ai.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
 if frontend_url:
     allowed_origins.append(frontend_url)
 
