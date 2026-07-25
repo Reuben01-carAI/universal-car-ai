@@ -1,0 +1,32 @@
+# Secret environment files
+.env
+**/.env
+*.env
+!*.env.example
+
+# Python
+venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Node / Vite
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# Backup folders
+backend-backup/
+backend-before-final/
+frontend-backup/
+frontend-before-final/
+frontend-old/
+frontend-old-2/
+
+# Editor and Windows files
+.vscode/
+.DS_Store
+Thumbs.db
