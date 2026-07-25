@@ -1,4 +1,6 @@
-export const API_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+// Public FastAPI backend deployed on Vercel.
+// Hard-coded for submission reliability so the production build does not depend on a local .env file.
+export const API_URL = "https://universal-car-ai-y3ie.vercel.app";
 
 const USER_KEY = "universal-car-ai-anonymous-user";
 
@@ -20,16 +22,44 @@ async function parseResponse(response) {
   const data = contentType.includes("application/json")
     ? await response.json()
     : { detail: await response.text() };
-  if (!response.ok) throw new Error(data?.detail || `Request failed (${response.status})`);
+
+  if (!response.ok) {
+    const message = typeof data?.detail === "string"
+      ? data.detail
+      : JSON.stringify(data?.detail || data || {});
+    throw new Error(message || `Request failed (${response.status})`);
+  }
+
   return data;
 }
 
+async function apiFetch(path, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+
+  try {
+    return await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("The AI request timed out. Please try again.");
+    }
+    throw new Error(`Cannot connect to the AI backend: ${error?.message || "network error"}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function getVehicleProfile() {
-  return parseResponse(await fetch(`${API_URL}/vehicle-profile`, { headers: userHeaders() }));
+  return parseResponse(await apiFetch("/vehicle-profile", {
+    headers: userHeaders(),
+  }));
 }
 
 export async function saveVehicleProfile(profile) {
-  return parseResponse(await fetch(`${API_URL}/vehicle-profile`, {
+  return parseResponse(await apiFetch("/vehicle-profile", {
     method: "POST",
     headers: userHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(profile),
@@ -41,7 +71,8 @@ export async function askCarAI(question, history = [], imageFile = null) {
   form.append("question", question || "");
   form.append("history", JSON.stringify(history));
   if (imageFile) form.append("image", imageFile);
-  return parseResponse(await fetch(`${API_URL}/ask`, {
+
+  return parseResponse(await apiFetch("/ask", {
     method: "POST",
     headers: userHeaders(),
     body: form,
